@@ -33,6 +33,8 @@ class MyIcons {
   static const IconData strip_led = IconData(0xF07D6, fontFamily: 'maticons');
   static const IconData star = IconData(0xF04D2, fontFamily: 'maticons');
   static const IconData twitch = IconData(0xF0543, fontFamily: 'maticons');
+  static const IconData palette = IconData(0xF03D8, fontFamily: 'maticons');
+  static const IconData temperature = IconData(0xF050F, fontFamily: 'maticons');
 }
 
 const Map<String, String> APP_PACKAGE_NAME = {
@@ -52,7 +54,7 @@ class ColorSliderData {
 class ColorModeData {
   static const String color = "Color";
   static const String temp = "Temperature";
-  bool colorMode;
+  int colorMode;
 
   ColorModeData(this.colorMode);
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:homeassistant/common.dart';
+import 'package:toggle_switch/toggle_switch.dart';
 
 void main() {
   runApp(MyApp());
@@ -13,7 +14,6 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Home',
       theme: ThemeData(
-        primarySwatch: Colors.deepPurple,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
       home: MyHomePage(title: 'Flutter Demo Home Page'),
@@ -37,7 +37,7 @@ class _MyHomePageState extends State<MyHomePage> {
   ColorSliderData red = ColorSliderData(MyIcons.r, 255.0);
   ColorSliderData green = ColorSliderData(MyIcons.g, 255.0);
   ColorSliderData blue = ColorSliderData(MyIcons.b, 255.0);
-  ColorModeData colorMode = ColorModeData(true);
+  ColorModeData colorMode = ColorModeData(1);
 
   Card getTempCard() {
     return Card(
@@ -47,11 +47,11 @@ class _MyHomePageState extends State<MyHomePage> {
             children: <Widget>[
               Expanded(
                   child: Slider(
-                      onChanged: colorMode.colorMode ? null : (double value) {
+                      onChanged: colorMode.colorMode == 0 ? (double value) {
                         setState(() {
                           temp = value;
                         });
-                      },
+                      } : null,
                       value: temp,
                       min: 1700,
                       divisions: (65 - 17),
@@ -86,7 +86,7 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
         Expanded(
             child: Slider(
-                onChanged: colorMode.colorMode ? (double newValue) {
+                onChanged: colorMode.colorMode == 1 ? (double newValue) {
                   setState(() {
                     sliderData.value = newValue;
                   });
@@ -119,7 +119,7 @@ class _MyHomePageState extends State<MyHomePage> {
             children: <Widget>[
               Expanded(
                 child: FlatButton(
-                  onPressed: colorMode.colorMode ? () {} : null,
+                  onPressed: colorMode.colorMode == 1 ? () {} : null,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: <Widget>[
@@ -355,41 +355,48 @@ class _MyHomePageState extends State<MyHomePage> {
                 .textTheme
                 .headline3),
           )),
-      Switch(
-        value: true,
-        onChanged: (bool value) {},
-      )
+      Padding(
+        padding: const EdgeInsets.only(right: 8.0),
+        child: ToggleSwitch(
+          initialLabelIndex: 0,
+          labels: ['OFF', 'ON'],
+          activeBgColors: [Colors.black45, Theme.of(context).accentColor],
+          inactiveBgColor: Colors.black12,
+          minWidth: 50.0,
+          onToggle: (index) {
+          },
+        ),
+      ),
     ]);
   }
 
   Row getColorGroupTitle(ColorModeData colorMode) {
     return Row(children: <Widget>[
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Text(
-              colorMode.colorMode ? ColorModeData.color : ColorModeData.temp,
-              style: Theme
-                  .of(context)
-                  .textTheme
-                  .headline3),
-        ),
         Expanded(
           child: Padding(
             padding: const EdgeInsets.all(8.0),
             child: Text(
-                colorMode.colorMode ? ColorModeData.temp : ColorModeData.color,
-                style: TextStyle(color: Colors.grey)),
+                "Pick",
+                style: Theme
+                    .of(context)
+                    .textTheme
+                    .headline3),
           )),
-
-
-      Switch(
-        value: colorMode.colorMode,
-        onChanged: (bool value) {
-          setState(() {
-            colorMode.colorMode = value;
-          });
-        },
-      )
+      Padding(
+        padding: const EdgeInsets.only(right: 8.0),
+        child: ToggleSwitch(
+          initialLabelIndex: colorMode.colorMode,
+          labels: ['', ''],
+          inactiveBgColor: Colors.black12,
+          minWidth: 50.0,
+          icons: [MyIcons.temperature, MyIcons.palette],
+          onToggle: (index) {
+            setState(() {
+              colorMode.colorMode = index;
+            });
+          },
+        ),
+      ),
     ]);
   }
 
@@ -403,8 +410,8 @@ class _MyHomePageState extends State<MyHomePage> {
         getGroup(
             getColorGroupTitle(colorMode),
             getGroupContent([
-              [getRGBCard(), getSpotifyCard()],
-              [getTempCard(), getBrightnessCard()]
+              [getTempCard(), getBrightnessCard()],
+              [getRGBCard(), getSpotifyCard()]
             ])),
         getGroup(
             getGroupTitle("Lights"),
