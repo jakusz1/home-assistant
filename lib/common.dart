@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 
 class MyIcons {
@@ -47,8 +49,9 @@ const Map<String, String> APP_PACKAGE_NAME = {
 class ColorSliderData {
   IconData icon;
   double value;
+  Color color;
 
-  ColorSliderData(this.icon, this.value);
+  ColorSliderData(this.icon, this.value, this.color);
 }
 
 class ColorModeData {
@@ -57,4 +60,55 @@ class ColorModeData {
   int colorMode;
 
   ColorModeData(this.colorMode);
+}
+
+class Light {
+  int id;
+  String name;
+  IconData icon;
+  int power;
+
+  Light(this.id, this.name, this.icon, this.power);
+}
+
+Color kelvinToColor(double temperature) {
+  temperature /= 100;
+  temperature *= 1.5;
+
+  // Compute each color in turn.
+  int red, green, blue;
+  // First: red
+  if (temperature <= 66)
+    red = 255;
+  else
+  {
+    // Note: the R-squared value for this approximation is .988
+    red = (329.698727446 * (pow(temperature - 60, -0.1332047592))).toInt();
+    red = red.clamp(0, 255);
+  }
+
+  // Second: green
+  if (temperature <= 66)
+    // Note: the R-squared value for this approximation is .996
+    green = (99.4708025861 * log(temperature) - 161.1195681661).toInt();
+  else
+    // Note: the R-squared value for this approximation is .987
+    green = (288.1221695283 * (pow(temperature - 60, -0.0755148492))).toInt();
+
+  green = green.clamp(0, 255);
+
+  // Third: blue
+  if (temperature >= 66)
+    blue = 255;
+  else if (temperature <= 19)
+    blue = 0;
+  else
+  {
+    // Note: the R-squared value for this approximation is .998
+    blue = (138.5177312231 * log(temperature - 10) - 305.0447927307).toInt();
+
+    blue = blue.clamp(0, 255);
+  }
+
+  return Color.fromRGBO(red, green, blue, 1);
 }

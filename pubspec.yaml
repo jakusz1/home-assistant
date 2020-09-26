@@ -82,3 +82,6 @@ flutter:
     - family: mosserat
       fonts:
           - asset: assets/Montserrat-Regular.ttf
+    - family: raleway
+      fonts:
+          - asset: assets/Raleway-Regular.ttf
