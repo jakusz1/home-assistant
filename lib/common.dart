@@ -1,12 +1,24 @@
+import 'dart:convert';
 import 'dart:math';
+import 'package:http/http.dart' as http;
+
 
 import 'package:flutter/material.dart';
 
+import 'light_data.dart';
+
 class MyIcons {
   static const IconData power_plug = IconData(0xF06A5, fontFamily: 'maticons');
-  static const IconData power_plug_off = IconData(0xF06A6, fontFamily: 'maticons');
-  static const IconData lightbulb_on = IconData(0xF06E8, fontFamily: 'maticons');
-  static const IconData lightbulb_off = IconData(0xF0E4F, fontFamily: 'maticons');
+  static const IconData power_plug_off =
+      IconData(0xF06A6, fontFamily: 'maticons');
+  static const IconData lightbulb_on =
+      IconData(0xF06E8, fontFamily: 'maticons');
+  static const IconData lightbulb_off =
+      IconData(0xF0E4F, fontFamily: 'maticons');
+  static const IconData all_lightbulbs_on =
+      IconData(0xF1255, fontFamily: 'maticons');
+  static const IconData all_lightbulbs_off =
+      IconData(0xF12CF, fontFamily: 'maticons');
   static const IconData audio_video = IconData(0xF093D, fontFamily: 'maticons');
   static const IconData desktop = IconData(0xF01C4, fontFamily: 'maticons');
   static const IconData tv = IconData(0xF0839, fontFamily: 'maticons');
@@ -17,8 +29,10 @@ class MyIcons {
   static const IconData cast = IconData(0xF0118, fontFamily: 'maticons');
   static const IconData cast_off = IconData(0xF078A, fontFamily: 'maticons');
   static const IconData progress = IconData(0xF0995, fontFamily: 'maticons');
-  static const IconData account_plus = IconData(0xF0014, fontFamily: 'maticons');
-  static const IconData close_circle_outline = IconData(0xF015A, fontFamily: 'maticons');
+  static const IconData account_plus =
+      IconData(0xF0014, fontFamily: 'maticons');
+  static const IconData close_circle_outline =
+      IconData(0xF015A, fontFamily: 'maticons');
   static const IconData candle = IconData(0xF05E2, fontFamily: 'maticons');
   static const IconData sunny = IconData(0xF05A8, fontFamily: 'maticons');
   static const IconData laptop = IconData(0xF0322, fontFamily: 'maticons');
@@ -37,6 +51,7 @@ class MyIcons {
   static const IconData twitch = IconData(0xF0543, fontFamily: 'maticons');
   static const IconData palette = IconData(0xF03D8, fontFamily: 'maticons');
   static const IconData temperature = IconData(0xF050F, fontFamily: 'maticons');
+  static const IconData power = IconData(0xF0425, fontFamily: 'maticons');
 }
 
 const Map<String, String> APP_PACKAGE_NAME = {
@@ -62,13 +77,54 @@ class ColorModeData {
   ColorModeData(this.colorMode);
 }
 
+class Config {
+  static const String API_PATH = "http://192.168.0.101:8000/api/";
+}
+
 class Light {
-  int id;
+  String id;
   String name;
   IconData icon;
   int power;
+  IconData secondLightIcon;
+  int secondLightPower;
+  LightData data = LightData(LightData(null));
 
-  Light(this.id, this.name, this.icon, this.power);
+  Light(this.id, this.name, this.icon, this.secondLightIcon);
+
+  Future<Light> setLight(
+      ColorModeData colorMode,
+      double temp,
+      ColorSliderData red,
+      ColorSliderData green,
+      ColorSliderData blue,
+      double brightness,
+      {bool secondLight: false}) async {
+    String state;
+    if (secondLight) {
+      state = "second_rgb";
+    } else if (secondLightIcon != null) {
+      state = "ct";
+    } else {
+      state = colorMode.colorMode == 1 ? "rgb" : "ct";
+    }
+    var url = "${Config.API_PATH}v2/lights/$id/$state";
+    Map<String, String> headers = {
+      'Content-type': 'application/json',
+      'Accept': 'application/json',
+    };
+    Map<String, int> body = {
+      'ct': temp.toInt(),
+      'r': red.value.toInt(),
+      'g': green.value.toInt(),
+      'b': blue.value.toInt(),
+      'br': brightness.toInt(),
+    };
+
+    final result = await http.post(url, headers: headers, body: json.encode(body));
+    data = LightData.fromJson(json.decode(result.body));
+    return this;
+  }
 }
 
 Color kelvinToColor(double temperature) {
@@ -80,8 +136,7 @@ Color kelvinToColor(double temperature) {
   // First: red
   if (temperature <= 66)
     red = 255;
-  else
-  {
+  else {
     // Note: the R-squared value for this approximation is .988
     red = (329.698727446 * (pow(temperature - 60, -0.1332047592))).toInt();
     red = red.clamp(0, 255);
@@ -102,8 +157,7 @@ Color kelvinToColor(double temperature) {
     blue = 255;
   else if (temperature <= 19)
     blue = 0;
-  else
-  {
+  else {
     // Note: the R-squared value for this approximation is .998
     blue = (138.5177312231 * log(temperature - 10) - 305.0447927307).toInt();
 

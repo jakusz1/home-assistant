@@ -1,9 +1,15 @@
+import 'dart:convert';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:homeassistant/common.dart';
+import 'package:homeassistant/light_data.dart';
+import 'package:homeassistant/light_repo.dart';
 import 'package:toggle_switch/toggle_switch.dart';
+import 'package:http/http.dart' as http;
 
 import 'common.dart';
+import 'devices.dart';
 
 void main() {
   runApp(MyApp());
@@ -43,12 +49,10 @@ class _MyHomePageState extends State<MyHomePage> {
   Color tempColor = Colors.white;
   Color currentColorForeground = Colors.black;
   ColorModeData colorMode = ColorModeData(1);
-  Light deskLight = Light(0, "Desk", MyIcons.desk_lamp, 0);
-  Light table1Light = Light(1, "Table 1", MyIcons.up, 0);
-  Light table2Light = Light(2, "Table 2", MyIcons.down, 0);
-  Light couchLight = Light(3, "Couch", MyIcons.floor_lamp, 0);
-  Light kitchenLight = Light(4, "Kitchen", MyIcons.strip_led, 0);
-  Light bedLight = Light(5, "Bed", MyIcons.bed_lamp, 0);
+  LightRepo lightRepo = LightRepo();
+  DenonDevice amp = DenonDevice();
+  SamsungDevice tv = SamsungDevice();
+  bool ampPowerBtnEnabled = true;
 
   void updateRGB() {
     rgbColor = Color.fromRGBO(
@@ -65,22 +69,128 @@ class _MyHomePageState extends State<MyHomePage> {
         activeColor.computeLuminance() > 0.3 ? Colors.black : Colors.white;
   }
 
-  Widget getLightSwitch(Light light) {
-//    return ToggleSwitch(
-//        initialLabelIndex: light.power,
-//        labels: ['', ''],
-//        activeBgColors: [Colors.white54, Theme.of(context).accentColor],
-//        inactiveBgColor: Colors.white12,
-//        minWidth: 20.0,
-//        minHeight: 20.0,
-//        onToggle: (index) {
-//          setState(() {
-//            light.power = index;
-//          });
-//        });
+  Future<void> switchLight(Light light, {bool secondLight: false}) async {
+    String state;
+    if (secondLight) {
+      state = light.data.secondLight.powerMode ? "second_off" : "second_on";
+    } else {
+      state = light.data.powerMode ? "off" : "on";
+    }
+    var url = "${Config.API_PATH}v2/lights/${light.id}/$state";
+    Map<String, String> headers = {
+      'Content-type': 'application/json',
+      'Accept': 'application/json',
+    };
+
+    final response = await http.post(url, headers: headers);
+    setState(() {
+      light.data = LightData.fromJson(json.decode(response.body));
+      lightRepo.isAnyPowered();
+    });
+  }
+
+  Widget getLightSwitch(Light light, {bool secondLight: false}) {
+    bool power =
+        secondLight ? light.data.secondLight.powerMode : light.data.powerMode;
     return IconButton(
-      icon: Icon(MyIcons.lightbulb_on),
-      onPressed: () {},
+      icon: power
+          ? Icon(
+              MyIcons.lightbulb_on,
+              color: Colors.white,
+            )
+          : Icon(
+              MyIcons.lightbulb_off,
+              color: Colors.white54,
+            ),
+      onPressed: () {
+        switchLight(light, secondLight: secondLight);
+      },
+    );
+  }
+
+  Widget getAllLightOffButton() {
+    return FlatButton(
+      onPressed: lightRepo.power
+          ? () {
+              lightRepo.turnOffAllLights().then((result) {
+                setState(() {
+                  lightRepo = result;
+                });
+              });
+            }
+          : null,
+      child: Row(
+        children: <Widget>[
+          Text("ALL "),
+          lightRepo.power
+              ? Icon(MyIcons.all_lightbulbs_on)
+              : Icon(MyIcons.all_lightbulbs_off)
+        ],
+      ),
+    );
+  }
+
+  Widget getAmpPowerButton(DenonDevice device) {
+    return FlatButton(
+      onPressed: () {
+        device.switchPower().then((result) {
+          setState(() {
+            device = result;
+          });
+        });
+      },
+      child: Row(
+        textDirection: TextDirection.ltr,
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: <Widget>[
+          device.power
+              ? Text(
+                  "ON ",
+                  style: TextStyle(color: Colors.tealAccent),
+                )
+              : Text("OFF "),
+          device.power
+              ? Icon(MyIcons.power_plug, color: Colors.tealAccent)
+              : Icon(MyIcons.power_plug_off)
+        ],
+      ),
+    );
+  }
+
+  Widget getPowerButton(Device device) {
+    return FlatButton(
+      onPressed: device.name == "TV" || ampPowerBtnEnabled
+          ? () {
+              if (device.name == "Amplifier" && !device.power) {
+                setState(() {
+                  ampPowerBtnEnabled = false;
+                });
+              }
+              device.switchPower().then((result) {
+                setState(() {
+                  device = result;
+                  if (device.name == "Amplifier") {
+                    ampPowerBtnEnabled = true;
+                  }
+                });
+              });
+            }
+          : null,
+      child: Row(
+        textDirection: TextDirection.ltr,
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: <Widget>[
+          device.power
+              ? Text(
+                  "ON ",
+                  style: TextStyle(color: Colors.tealAccent),
+                )
+              : Text("OFF "),
+          device.power
+              ? Icon(MyIcons.power_plug, color: Colors.tealAccent)
+              : Icon(MyIcons.power_plug_off)
+        ],
+      ),
     );
   }
 
@@ -121,12 +231,18 @@ class _MyHomePageState extends State<MyHomePage> {
             children: <Widget>[
               Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: Icon(MyIcons.fire, color: kelvinToColor(1700),),
+                child: Icon(
+                  MyIcons.fire,
+                  color: kelvinToColor(1700),
+                ),
               ),
               Text("${temp.round()} K"),
               Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: Icon(MyIcons.sunny, color: kelvinToColor(6500),),
+                child: Icon(
+                  MyIcons.sunny,
+                  color: kelvinToColor(6500),
+                ),
               )
             ],
           ),
@@ -250,9 +366,27 @@ class _MyHomePageState extends State<MyHomePage> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: <Widget>[
               FlatButton(
+                onPressed: amp.power
+                    ? () {
+                        amp.sendAction(DenonEnum.VOL_DOWN).then((result) {
+                          setState(() {
+                            amp = result;
+                          });
+                        });
+                      }
+                    : null,
                 child: Icon(Icons.volume_down),
               ),
               FlatButton(
+                onPressed: amp.power
+                    ? () {
+                        amp.sendAction(DenonEnum.VOL_UP).then((result) {
+                          setState(() {
+                            amp = result;
+                          });
+                        });
+                      }
+                    : null,
                 child: Icon(Icons.volume_up),
               ),
             ],
@@ -271,21 +405,63 @@ class _MyHomePageState extends State<MyHomePage> {
             children: <Widget>[
               Flexible(
                   child: FlatButton(
-                child: Icon(MyIcons.tv),
+                onPressed: amp.power
+                    ? () {
+                        amp.sendAction(DenonEnum.INPUT_TV).then((result) {
+                          setState(() {
+                            amp = result;
+                          });
+                        });
+                      }
+                    : null,
+                child: Icon(MyIcons.tv,
+                    color: getSourceBtnColor(amp, DenonEnum.INPUT_TV)),
               )),
               Flexible(
                   child: FlatButton(
-                child: Icon(MyIcons.desktop),
+                onPressed: amp.power
+                    ? () {
+                        amp.sendAction(DenonEnum.INPUT_PC).then((result) {
+                          setState(() {
+                            amp = result;
+                          });
+                        });
+                      }
+                    : null,
+                child: Icon(MyIcons.desktop,
+                    color: getSourceBtnColor(amp, DenonEnum.INPUT_PC)),
               )),
               Flexible(
                   child: FlatButton(
-                child: Icon(MyIcons.laptop),
+                onPressed: amp.power
+                    ? () {
+                        amp.sendAction(DenonEnum.INPUT_PC2).then((result) {
+                          setState(() {
+                            amp = result;
+                          });
+                        });
+                      }
+                    : null,
+                child: Icon(
+                  MyIcons.laptop,
+                  color: getSourceBtnColor(amp, DenonEnum.INPUT_PC2),
+                ),
               )),
             ],
           )
         ],
       ),
     );
+  }
+
+  Color getSourceBtnColor(Device device, String source) {
+    if (device.power) {
+      if (device.source == source) {
+        return Colors.tealAccent;
+      }
+      return Colors.white;
+    }
+    return Colors.white54;
   }
 
   Card getTVAppsCard() {
@@ -297,23 +473,87 @@ class _MyHomePageState extends State<MyHomePage> {
             children: <Widget>[
               Flexible(
                   child: FlatButton(
-                child: Icon(MyIcons.youtube),
+                onPressed: tv.power
+                    ? () {
+                        tv.setSource(SourceEnum.YOUTUBE).then((result) {
+                          setState(() {
+                            tv = result;
+                          });
+                        });
+                      }
+                    : null,
+                child: Icon(MyIcons.youtube,
+                    color: getSourceBtnColor(tv, SourceEnum.YOUTUBE)),
               )),
               Flexible(
                   child: FlatButton(
-                child: Icon(MyIcons.spotify),
+                onPressed: tv.power
+                    ? () {
+                        tv.setSource(SourceEnum.SPOTIFY).then((result) {
+                          setState(() {
+                            tv = result;
+                          });
+                        });
+                      }
+                    : null,
+                child: Icon(MyIcons.spotify,
+                    color: getSourceBtnColor(tv, SourceEnum.SPOTIFY)),
               )),
               Flexible(
                   child: FlatButton(
-                child: Icon(MyIcons.netflix),
+                onPressed: tv.power
+                    ? () {
+                        tv.setSource(SourceEnum.NETFLIX).then((result) {
+                          setState(() {
+                            tv = result;
+                          });
+                        });
+                      }
+                    : null,
+                child: Icon(MyIcons.netflix,
+                    color: getSourceBtnColor(tv, SourceEnum.NETFLIX)),
               )),
               Flexible(
                   child: FlatButton(
-                child: Icon(MyIcons.hbo_go),
+                onPressed: tv.power
+                    ? () {
+                        tv.setSource(SourceEnum.HBO_GO).then((result) {
+                          setState(() {
+                            tv = result;
+                          });
+                        });
+                      }
+                    : null,
+                child: Icon(MyIcons.hbo_go,
+                    color: getSourceBtnColor(tv, SourceEnum.HBO_GO)),
               )),
               Flexible(
                   child: FlatButton(
-                child: Icon(MyIcons.twitch),
+                onPressed: tv.power
+                    ? () {
+                        tv.setSource(SourceEnum.TWITCH).then((result) {
+                          setState(() {
+                            tv = result;
+                          });
+                        });
+                      }
+                    : null,
+                child: Icon(MyIcons.twitch,
+                    color: getSourceBtnColor(tv, SourceEnum.TWITCH)),
+              )),
+              Flexible(
+                  child: FlatButton(
+                onPressed: tv.power
+                    ? () {
+                        tv.setSource(SourceEnum.PC).then((result) {
+                          setState(() {
+                            tv = result;
+                          });
+                        });
+                      }
+                    : null,
+                child: Icon(MyIcons.desktop,
+                    color: getSourceBtnColor(tv, SourceEnum.PC)),
               )),
             ],
           )
@@ -322,21 +562,72 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  Card getLampCard(Light light, {Light secondLight}) {
+  Card getLampCard(Light light) {
     return Card(
       elevation: 0,
       child: Column(
         children: <Widget>[
+          if (light.secondLightIcon != null)
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: FlatButton(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      onPressed: light.data.secondLight.powerMode
+                          ? () {
+                              light
+                                  .setLight(colorMode, temp, red, green, blue,
+                                      brightness,
+                                      secondLight: true)
+                                  .then((result) {
+                                setState(() {
+                                  light = result;
+                                });
+                              });
+                            }
+                          : null,
+                      child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Row(
+                            children: <Widget>[
+                              Icon(
+                                light.secondLightIcon,
+                                color:
+                                    getLightIconColor(light, secondLight: true),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.only(left: 8),
+                                child: Text(light.name,
+                                    style: TextStyle(fontSize: 25)),
+                              ),
+                            ],
+                          ))),
+                ),
+                getLightSwitch(light, secondLight: true)
+              ],
+            ),
           Row(
             children: <Widget>[
               Expanded(
                 child: FlatButton(
                     padding: const EdgeInsets.symmetric(horizontal: 8),
+                    onPressed: light.data.powerMode
+                        ? () {
+                            light
+                                .setLight(colorMode, temp, red, green, blue,
+                                    brightness)
+                                .then((result) {
+                              setState(() {
+                                light = result;
+                              });
+                            });
+                          }
+                        : null,
                     child: Align(
                         alignment: Alignment.centerLeft,
                         child: Row(
                           children: <Widget>[
-                            Icon(light.icon),
+                            Icon(light.icon, color: getLightIconColor(light)),
                             Padding(
                               padding: const EdgeInsets.only(left: 8),
                               child: Text(light.name,
@@ -347,29 +638,7 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
               getLightSwitch(light)
             ],
-          ),
-          if (secondLight != null)
-            Row(
-              children: <Widget>[
-                Expanded(
-                  child: FlatButton(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: Row(
-                            children: <Widget>[
-                              Icon(secondLight.icon),
-                              Padding(
-                                padding: const EdgeInsets.only(left: 8),
-                                child: Text(secondLight.name,
-                                    style: TextStyle(fontSize: 25)),
-                              ),
-                            ],
-                          ))),
-                ),
-                getLightSwitch(secondLight)
-              ],
-            )
+          )
         ],
       ),
     );
@@ -407,25 +676,25 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  Row getGroupTitle(String groupName) {
+  Row getDeviceTitle(Device device) {
     return Row(children: <Widget>[
       Expanded(
           child: Padding(
         padding: const EdgeInsets.all(8.0),
-        child: Text(groupName, style: TextStyle(fontSize: 40)),
+        child: Text(device.name, style: TextStyle(fontSize: 40)),
       )),
-      Padding(
-        padding: const EdgeInsets.only(right: 8.0),
-        child: ToggleSwitch(
-          initialLabelIndex: 0,
-          labels: ['OFF', 'ON'],
-          activeBgColors: [Colors.white54, Colors.white],
-          inactiveBgColor: Colors.white10,
-          inactiveFgColor: Colors.white30,
-          minWidth: 50.0,
-          onToggle: (index) {},
-        ),
-      ),
+      getPowerButton(device)
+    ]);
+  }
+
+  Row getLightsTitle() {
+    return Row(children: <Widget>[
+      Expanded(
+          child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Text("Lights", style: TextStyle(fontSize: 40)),
+      )),
+      getAllLightOffButton()
     ]);
   }
 
@@ -475,32 +744,39 @@ class _MyHomePageState extends State<MyHomePage> {
               [getRGBCard(), getSpotifyCard()]
             ])),
         getGroup(
-            getGroupTitle("Lights"),
+            getLightsTitle(),
             getGroupContent([
+              [getLampCard(lightRepo.repo[0]), getLampCard(lightRepo.repo[1])],
               [
-                getLampCard(deskLight),
-                getLampCard(table1Light, secondLight: table2Light)
-              ],
-              [
-                getLampCard(couchLight),
-                getLampCard(kitchenLight),
-                getLampCard(bedLight)
+                getLampCard(lightRepo.repo[2]),
+                getLampCard(lightRepo.repo[3]),
+                getLampCard(lightRepo.repo[4])
               ]
             ])),
       ])
     ]);
   }
 
+  Color getLightIconColor(Light light, {bool secondLight: false}) {
+    LightData data = secondLight ? light.data.secondLight : light.data;
+    if (data.powerMode) {
+      return data.colorMode
+          ? Color.fromRGBO(data.red, data.green, data.blue, 1.0)
+          : kelvinToColor(data.ct.toDouble());
+    }
+    return Colors.white54;
+  }
+
   ListView getDevicesListView() {
     return ListView(shrinkWrap: false, children: <Widget>[
       Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
         getGroup(
-            getGroupTitle("TV"),
+            getDeviceTitle(tv),
             getGroupContent([
               [getTVAppsCard()]
             ])),
         getGroup(
-            getGroupTitle("Denon"),
+            getDeviceTitle(amp),
             getGroupContent([
               [getDenonInputsCard()],
               [getVolumeCard()]
@@ -531,6 +807,31 @@ class _MyHomePageState extends State<MyHomePage> {
         ])
       ])
     ]);
+  }
+
+  @override
+  initState() {
+    super.initState();
+    lightRepo.addLight(Light("desk", "Desk", MyIcons.desk_lamp, null));
+    lightRepo.addLight(Light("table", "Table", MyIcons.down, MyIcons.up));
+    lightRepo.addLight(Light("couch", "Couch", MyIcons.floor_lamp, null));
+    lightRepo.addLight(Light("kitchen", "Kitchen", MyIcons.strip_led, null));
+    lightRepo.addLight(Light("bed", "Bed", MyIcons.bed_lamp, null));
+    lightRepo.updateLightData().then((result) {
+      setState(() {
+        lightRepo = result;
+      });
+    });
+    tv.update().then((result) {
+      setState(() {
+        tv = result;
+      });
+    });
+    amp.update().then((result) {
+      setState(() {
+        amp = result;
+      });
+    });
   }
 
   @override
