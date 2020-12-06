@@ -7,9 +7,39 @@ import 'package:homeassistant/light_data.dart';
 import 'package:homeassistant/light_repo.dart';
 import 'package:toggle_switch/toggle_switch.dart';
 import 'package:http/http.dart' as http;
+import 'package:pull_to_refresh/pull_to_refresh.dart';
 
 import 'common.dart';
 import 'devices.dart';
+import 'package:flutter/foundation.dart';
+
+class LifecycleEventHandler extends WidgetsBindingObserver {
+  final AsyncCallback resumeCallBack;
+  final AsyncCallback suspendingCallBack;
+
+  LifecycleEventHandler({
+    this.resumeCallBack,
+    this.suspendingCallBack,
+  });
+
+  @override
+  Future<void> didChangeAppLifecycleState(AppLifecycleState state) async {
+    switch (state) {
+      case AppLifecycleState.resumed:
+        if (resumeCallBack != null) {
+          await resumeCallBack();
+        }
+        break;
+      case AppLifecycleState.inactive:
+      case AppLifecycleState.paused:
+      case AppLifecycleState.detached:
+        if (suspendingCallBack != null) {
+          await suspendingCallBack();
+        }
+        break;
+    }
+  }
+}
 
 void main() {
   runApp(MyApp());
@@ -734,27 +764,41 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  ListView getLightsListView() {
-    return ListView(shrinkWrap: false, children: <Widget>[
-      Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
-        getGroup(
-            getColorGroupTitle(colorMode),
-            getGroupContent([
-              [getTempCard(), getBrightnessCard()],
-              [getRGBCard(), getSpotifyCard()]
-            ])),
-        getGroup(
-            getLightsTitle(),
-            getGroupContent([
-              [getLampCard(lightRepo.repo[0]), getLampCard(lightRepo.repo[1])],
-              [
-                getLampCard(lightRepo.repo[2]),
-                getLampCard(lightRepo.repo[3]),
-                getLampCard(lightRepo.repo[4])
-              ]
-            ])),
-      ])
-    ]);
+  Widget getLightsListView() {
+    RefreshController _refreshController =
+        RefreshController(initialRefresh: false);
+    return SmartRefresher(
+        controller: _refreshController,
+        child: ListView(shrinkWrap: false, children: <Widget>[
+          Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                getGroup(
+                    getColorGroupTitle(colorMode),
+                    getGroupContent([
+                      [getTempCard(), getBrightnessCard()],
+                      [getRGBCard(), getSpotifyCard()]
+                    ])),
+                getGroup(
+                    getLightsTitle(),
+                    getGroupContent([
+                      [
+                        getLampCard(lightRepo.repo[0]),
+                        getLampCard(lightRepo.repo[1])
+                      ],
+                      [
+                        getLampCard(lightRepo.repo[2]),
+                        getLampCard(lightRepo.repo[3]),
+                        getLampCard(lightRepo.repo[4])
+                      ]
+                    ])),
+              ])
+        ]),
+        onRefresh: () async {
+          updateLightsTab();
+          if (mounted) setState(() {});
+          _refreshController.refreshCompleted();
+        });
   }
 
   Color getLightIconColor(Light light, {bool secondLight: false}) {
@@ -767,22 +811,33 @@ class _MyHomePageState extends State<MyHomePage> {
     return Colors.white54;
   }
 
-  ListView getDevicesListView() {
-    return ListView(shrinkWrap: false, children: <Widget>[
-      Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
-        getGroup(
-            getDeviceTitle(tv),
-            getGroupContent([
-              [getTVAppsCard()]
-            ])),
-        getGroup(
-            getDeviceTitle(amp),
-            getGroupContent([
-              [getDenonInputsCard()],
-              [getVolumeCard()]
-            ])),
-      ])
-    ]);
+  Widget getDevicesListView() {
+    RefreshController _refreshController =
+        RefreshController(initialRefresh: false);
+    return SmartRefresher(
+        controller: _refreshController,
+        child: ListView(shrinkWrap: false, children: <Widget>[
+          Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                getGroup(
+                    getDeviceTitle(tv),
+                    getGroupContent([
+                      [getTVAppsCard()]
+                    ])),
+                getGroup(
+                    getDeviceTitle(amp),
+                    getGroupContent([
+                      [getDenonInputsCard()],
+                      [getVolumeCard()]
+                    ])),
+              ])
+        ]),
+        onRefresh: () async {
+          updateDevicesTab();
+          if (mounted) setState(() {});
+          _refreshController.refreshCompleted();
+        });
   }
 
   ListView getScenesListView() {
@@ -809,19 +864,15 @@ class _MyHomePageState extends State<MyHomePage> {
     ]);
   }
 
-  @override
-  initState() {
-    super.initState();
-    lightRepo.addLight(Light("desk", "Desk", MyIcons.desk_lamp, null));
-    lightRepo.addLight(Light("table", "Table", MyIcons.down, MyIcons.up));
-    lightRepo.addLight(Light("couch", "Couch", MyIcons.floor_lamp, null));
-    lightRepo.addLight(Light("kitchen", "Kitchen", MyIcons.strip_led, null));
-    lightRepo.addLight(Light("bed", "Bed", MyIcons.bed_lamp, null));
+  updateLightsTab() {
     lightRepo.updateLightData().then((result) {
       setState(() {
         lightRepo = result;
       });
     });
+  }
+
+  updateDevicesTab() {
     tv.update().then((result) {
       setState(() {
         tv = result;
@@ -832,6 +883,26 @@ class _MyHomePageState extends State<MyHomePage> {
         amp = result;
       });
     });
+  }
+
+  updateAll() {
+    updateLightsTab();
+    updateDevicesTab();
+  }
+
+  @override
+  initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(LifecycleEventHandler(
+        resumeCallBack: () async => setState(() {
+              updateAll();
+            })));
+    lightRepo.addLight(Light("desk", "Desk", MyIcons.desk_lamp, null));
+    lightRepo.addLight(Light("table", "Table", MyIcons.down, MyIcons.up));
+    lightRepo.addLight(Light("couch", "Couch", MyIcons.floor_lamp, null));
+    lightRepo.addLight(Light("kitchen", "Kitchen", MyIcons.strip_led, null));
+    lightRepo.addLight(Light("bed", "Bed", MyIcons.bed_lamp, null));
+    updateAll();
   }
 
   @override
