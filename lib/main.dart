@@ -83,6 +83,8 @@ class _MyHomePageState extends State<MyHomePage> {
   DenonDevice amp = DenonDevice();
   SamsungDevice tv = SamsungDevice();
   bool ampPowerBtnEnabled = true;
+  RefreshController _refreshController =
+      RefreshController(initialRefresh: false);
 
   void updateRGB() {
     rgbColor = Color.fromRGBO(
@@ -711,7 +713,7 @@ class _MyHomePageState extends State<MyHomePage> {
       Expanded(
           child: Padding(
         padding: const EdgeInsets.all(8.0),
-        child: Text(device.name, style: TextStyle(fontSize: 40)),
+        child: Text(device.name, style: TextStyle(fontSize: 30)),
       )),
       getPowerButton(device)
     ]);
@@ -722,7 +724,7 @@ class _MyHomePageState extends State<MyHomePage> {
       Expanded(
           child: Padding(
         padding: const EdgeInsets.all(8.0),
-        child: Text("Lights", style: TextStyle(fontSize: 40)),
+        child: Text("Lights", style: TextStyle(fontSize: 30)),
       )),
       getAllLightOffButton()
     ]);
@@ -733,7 +735,7 @@ class _MyHomePageState extends State<MyHomePage> {
       Expanded(
           child: Padding(
         padding: const EdgeInsets.all(8.0),
-        child: Text("Pick", style: TextStyle(fontSize: 40)),
+        child: Text("Pick", style: TextStyle(fontSize: 30)),
       )),
       Padding(
         padding: const EdgeInsets.only(right: 8.0),
@@ -765,11 +767,9 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Widget getLightsListView() {
-    RefreshController _refreshController =
-        RefreshController(initialRefresh: false);
     return SmartRefresher(
         controller: _refreshController,
-        child: ListView(shrinkWrap: false, children: <Widget>[
+        child: ListView(children: <Widget>[
           Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
@@ -812,11 +812,9 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Widget getDevicesListView() {
-    RefreshController _refreshController =
-        RefreshController(initialRefresh: false);
     return SmartRefresher(
         controller: _refreshController,
-        child: ListView(shrinkWrap: false, children: <Widget>[
+        child: ListView(children: <Widget>[
           Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
@@ -908,75 +906,50 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      theme: ThemeData(
-          brightness: Brightness.dark,
-          sliderTheme: SliderTheme.of(context).copyWith(
-            //slider modifications
-            thumbColor: Colors.white,
-            inactiveTrackColor: Color(0xFF8D8E98),
-            activeTrackColor: Colors.white,
-            trackHeight: 6,
-            overlayColor: Colors.transparent,
-          ),
-          fontFamily: "raleway"),
-      home: DefaultTabController(
-        initialIndex: 1,
-        length: 3,
-        child: Scaffold(
-          appBar: AppBar(
-            flexibleSpace: SafeArea(
-              child: TabBar(
-                tabs: [
-                  Tab(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: <Widget>[
-                        Icon(MyIcons.star),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                          child: Text("SCENES"),
-                        )
-                      ],
-                    ),
-                  ),
-                  Tab(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: <Widget>[
-                        Icon(Icons.lightbulb_outline),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                          child: Text("LIGHTS"),
-                        )
-                      ],
-                    ),
-                  ),
-                  Tab(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: <Widget>[
-                        Icon(Icons.devices_other),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                          child: Text("DEVICES"),
-                        )
-                      ],
-                    ),
-                  ),
+        theme: ThemeData(
+            brightness: Brightness.dark,
+            sliderTheme: SliderTheme.of(context).copyWith(
+              //slider modifications
+              thumbColor: Colors.white,
+              inactiveTrackColor: Color(0xFF8D8E98),
+              activeTrackColor: Colors.white,
+              trackHeight: 6,
+              overlayColor: Colors.transparent,
+            ),
+            fontFamily: "raleway"),
+        home: DefaultTabController(
+            length: 3,
+            initialIndex: 1,
+            child: Scaffold(
+              appBar: AppBar(
+                toolbarHeight: 0.0,
+              ),
+              bottomNavigationBar: ColoredTabBar(Colors.black45,menu()),
+              body: TabBarView(
+                children: [
+                  getScenesListView(),
+                  getLightsListView(),
+                  getDevicesListView()
                 ],
               ),
-            ),
-          ),
-          body: TabBarView(
-            physics: NeverScrollableScrollPhysics(),
-            children: [
-              getScenesListView(),
-              getLightsListView(),
-              getDevicesListView(),
-            ],
-          ),
-        ),
+            )));
+  }
+
+  Widget menu() {
+    return TabBar(
+        tabs: [
+      Tab(
+        icon: Icon(MyIcons.star),
+        text: "Scenes"
       ),
-    );
+      Tab(
+        icon: Icon(Icons.lightbulb_outline),
+        text: "Lights"
+      ),
+      Tab(
+        icon:Icon(Icons.devices_other),
+        text: "Devices"
+      ),
+    ]);
   }
 }
