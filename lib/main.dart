@@ -83,7 +83,9 @@ class _MyHomePageState extends State<MyHomePage> {
   DenonDevice amp = DenonDevice();
   SamsungDevice tv = SamsungDevice();
   bool ampPowerBtnEnabled = true;
-  RefreshController _refreshController =
+  RefreshController _lightsRefreshController =
+      RefreshController(initialRefresh: false);
+  RefreshController _devicesRefreshController =
       RefreshController(initialRefresh: false);
 
   void updateRGB() {
@@ -768,7 +770,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Widget getLightsListView() {
     return SmartRefresher(
-        controller: _refreshController,
+        controller: _lightsRefreshController,
         child: ListView(children: <Widget>[
           Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -797,7 +799,7 @@ class _MyHomePageState extends State<MyHomePage> {
         onRefresh: () async {
           updateLightsTab();
           if (mounted) setState(() {});
-          _refreshController.refreshCompleted();
+          _lightsRefreshController.refreshCompleted();
         });
   }
 
@@ -813,7 +815,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Widget getDevicesListView() {
     return SmartRefresher(
-        controller: _refreshController,
+        controller: _devicesRefreshController,
         child: ListView(children: <Widget>[
           Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -834,7 +836,7 @@ class _MyHomePageState extends State<MyHomePage> {
         onRefresh: () async {
           updateDevicesTab();
           if (mounted) setState(() {});
-          _refreshController.refreshCompleted();
+          _devicesRefreshController.refreshCompleted();
         });
   }
 
@@ -906,6 +908,7 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+        title: "HomeAssistant",
         theme: ThemeData(
             brightness: Brightness.dark,
             sliderTheme: SliderTheme.of(context).copyWith(
@@ -924,7 +927,7 @@ class _MyHomePageState extends State<MyHomePage> {
               appBar: AppBar(
                 toolbarHeight: 0.0,
               ),
-              bottomNavigationBar: ColoredTabBar(Colors.black45,menu()),
+              bottomNavigationBar: ColoredTabBar(Colors.black45, menu()),
               body: TabBarView(
                 children: [
                   getScenesListView(),
@@ -936,20 +939,10 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Widget menu() {
-    return TabBar(
-        tabs: [
-      Tab(
-        icon: Icon(MyIcons.star),
-        text: "Scenes"
-      ),
-      Tab(
-        icon: Icon(Icons.lightbulb_outline),
-        text: "Lights"
-      ),
-      Tab(
-        icon:Icon(Icons.devices_other),
-        text: "Devices"
-      ),
+    return TabBar(tabs: [
+      Tab(icon: Icon(MyIcons.star), text: "Scenes"),
+      Tab(icon: Icon(Icons.lightbulb_outline), text: "Lights"),
+      Tab(icon: Icon(Icons.devices_other), text: "Devices"),
     ]);
   }
 }

@@ -78,7 +78,7 @@ class ColorModeData {
 }
 
 class Config {
-  static const String API_PATH = "http://192.168.0.101:8000/api/";
+  static const String API_PATH = "http://192.168.0.101:80/api/";
 }
 
 class Light {

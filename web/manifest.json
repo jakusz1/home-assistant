@@ -1,11 +1,11 @@
 {
-    "name": "home_assistant",
-    "short_name": "home_assistant",
+    "name": "HomeAssistant",
+    "short_name": "HA",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "HomeAssistant",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
