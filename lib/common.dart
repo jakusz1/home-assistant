@@ -57,6 +57,7 @@ class MyIcons {
   static const IconData contrast = IconData(0xF0916, fontFamily: 'maticons');
   static const IconData cross = IconData(0xF0CF6, fontFamily: 'maticons');
   static const IconData heart = IconData(0xF0EF9, fontFamily: 'maticons');
+  static const IconData flower = IconData(0xF09F1, fontFamily: 'maticons');
 }
 
 const Map<String, String> APP_PACKAGE_NAME = {

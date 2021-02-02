@@ -8,6 +8,7 @@ import 'package:homeassistant/light_repo.dart';
 import 'package:toggle_switch/toggle_switch.dart';
 import 'package:http/http.dart' as http;
 import 'package:pull_to_refresh/pull_to_refresh.dart';
+import 'package:gradient_ui_widgets/gradient_ui_widgets.dart';
 
 import 'common.dart';
 import 'devices.dart';
@@ -120,6 +121,24 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {
       light.data = LightData.fromJson(json.decode(response.body));
       lightRepo.isAnyPowered();
+    });
+  }
+
+  Future<void> updateSpotify() async {
+    var url = "${Config.API_PATH}v2/spotify";
+    Map<String, String> headers = {
+      'Content-type': 'application/json',
+      'Accept': 'application/json',
+    };
+
+    final response = await http.get(url, headers: headers);
+    setState(() {
+      var rgb = json.decode(response.body)['best_rgb'];
+      red.value = rgb[0].toDouble();
+      green.value = rgb[1].toDouble();
+      blue.value = rgb[2].toDouble();
+      updateRGB();
+      updateForegroundColor();
     });
   }
 
@@ -336,7 +355,7 @@ class _MyHomePageState extends State<MyHomePage> {
             children: <Widget>[
               Expanded(
                 child: FlatButton(
-                  onPressed: colorMode.colorMode == 1 ? () {} : null,
+                  onPressed: colorMode.colorMode == 1 ? () {updateSpotify();} : null,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: <Widget>[
@@ -678,44 +697,46 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  Card _buildSceneCard(IconData icon, String visibleName, String name) {
-    return Card(
-        elevation: 0,
-        child: Column(
-          children: <Widget>[
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                Expanded(
-                  child: FlatButton(
-                    onPressed: () {
-                      lightRepo.setScene(name).then((result) {
-                        setState(() {
-                          lightRepo = result;
-                        });
+  Card _buildSceneCard(
+      Gradient gradient, IconData icon, String visibleName, String name) {
+    return GradientCard(
+      gradient: gradient,
+      padding: EdgeInsets.all(8),
+      child: Column(
+        children: <Widget>[
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              Expanded(
+                child: FlatButton(
+                  onPressed: () {
+                    lightRepo.setScene(name).then((result) {
+                      setState(() {
+                        lightRepo = result;
                       });
-                    },
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: <Widget>[
-                        Icon(
-                          icon,
-                          size: 40,
-                        ),
-                        Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 32),
-                            child: Text(
-                              visibleName,
-                              style: TextStyle(fontSize: 30),
-                            ))
-                      ],
-                    ),
+                    });
+                  },
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: <Widget>[
+                      Icon(
+                        icon,
+                      ),
+                      Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 0),
+                          child: Text(
+                            visibleName,
+                            style: TextStyle(fontSize: 30),
+                          ))
+                    ],
                   ),
                 ),
-              ],
-            )
-          ],
-        ));
+              ),
+            ],
+          )
+        ],
+      ),
+    );
   }
 
   Row getGroupContent(List<List<Widget>> columnsOfBlocks) {
@@ -867,15 +888,78 @@ class _MyHomePageState extends State<MyHomePage> {
       Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
         getGroupContent([
           [
-            _buildSceneCard(MyIcons.candle, "Candle", "candle"),
-            _buildSceneCard(MyIcons.sunny, "Day", "day"),
-            _buildSceneCard(MyIcons.diamond, "Neon", "neon"),
-            _buildSceneCard(MyIcons.heart, "Whorehouse", "red"),
-          ],
-          [
-            _buildSceneCard(MyIcons.cold, "Cold", "cold"),
-            _buildSceneCard(MyIcons.cross, "Pink", "pink"),
-            _buildSceneCard(MyIcons.contrast, "Neon v2", "neon2"),
+            _buildSceneCard(
+                LinearGradient(
+                  colors: [
+                    kelvinToColor(1700),
+                    Colors.transparent,
+                  ],
+                ),
+                MyIcons.candle,
+                "Candle",
+                "candle"),
+            _buildSceneCard(
+                LinearGradient(
+                  colors: [
+                    Colors.white38,
+                    Colors.transparent,
+                  ],
+                ),
+                MyIcons.sunny,
+                "Day",
+                "day"),
+            _buildSceneCard(
+                LinearGradient(
+                  colors: [
+                    Color(0xFF00ff51),
+                    Color(0xFFff00ff),
+                    Colors.transparent,
+                  ],
+                ),
+                MyIcons.contrast,
+                "Neon",
+                "neon"),
+            _buildSceneCard(
+                LinearGradient(
+                  colors: [
+                    Colors.red,
+                    Colors.transparent,
+                  ],
+                ),
+                MyIcons.cross,
+                "Whorehouse",
+                "red"),
+            _buildSceneCard(
+                LinearGradient(
+                  colors: [
+                    kelvinToColor(6500),
+                    Colors.transparent,
+                  ],
+                ),
+                MyIcons.cold,
+                "Cold",
+                "cold"),
+            _buildSceneCard(
+                LinearGradient(
+                  colors: [
+                    Color(0xFFff00ff),
+                    Colors.transparent,
+                  ],
+                ),
+                MyIcons.flower,
+                "Pink",
+                "pink"),
+            _buildSceneCard(
+                LinearGradient(
+                  colors: [
+                    Color(0xFFff00ff),
+                    Colors.blue,
+                    Colors.transparent,
+                  ],
+                ),
+                MyIcons.diamond,
+                "Neon v2",
+                "neon2"),
           ],
         ])
       ])
