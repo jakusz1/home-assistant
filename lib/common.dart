@@ -52,6 +52,11 @@ class MyIcons {
   static const IconData palette = IconData(0xF03D8, fontFamily: 'maticons');
   static const IconData temperature = IconData(0xF050F, fontFamily: 'maticons');
   static const IconData power = IconData(0xF0425, fontFamily: 'maticons');
+  static const IconData cold = IconData(0xF0717, fontFamily: 'maticons');
+  static const IconData diamond = IconData(0xF01C8, fontFamily: 'maticons');
+  static const IconData contrast = IconData(0xF0916, fontFamily: 'maticons');
+  static const IconData cross = IconData(0xF0CF6, fontFamily: 'maticons');
+  static const IconData heart = IconData(0xF0EF9, fontFamily: 'maticons');
 }
 
 const Map<String, String> APP_PACKAGE_NAME = {

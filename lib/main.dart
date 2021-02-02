@@ -678,7 +678,7 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  Card _buildCard() {
+  Card _buildSceneCard(IconData icon, String visibleName, String name) {
     return Card(
         elevation: 0,
         child: Column(
@@ -686,10 +686,32 @@ class _MyHomePageState extends State<MyHomePage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
-                Padding(
-                  padding: const EdgeInsets.all(32.0),
-                  child: Text("Card"),
-                )
+                Expanded(
+                  child: FlatButton(
+                    onPressed: () {
+                      lightRepo.setScene(name).then((result) {
+                        setState(() {
+                          lightRepo = result;
+                        });
+                      });
+                    },
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: <Widget>[
+                        Icon(
+                          icon,
+                          size: 40,
+                        ),
+                        Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 32),
+                            child: Text(
+                              visibleName,
+                              style: TextStyle(fontSize: 30),
+                            ))
+                      ],
+                    ),
+                  ),
+                ),
               ],
             )
           ],
@@ -845,19 +867,15 @@ class _MyHomePageState extends State<MyHomePage> {
       Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
         getGroupContent([
           [
-            _buildCard(),
-            _buildCard(),
-            _buildCard(),
+            _buildSceneCard(MyIcons.candle, "Candle", "candle"),
+            _buildSceneCard(MyIcons.sunny, "Day", "day"),
+            _buildSceneCard(MyIcons.diamond, "Neon", "neon"),
+            _buildSceneCard(MyIcons.heart, "Whorehouse", "red"),
           ],
           [
-            _buildCard(),
-            _buildCard(),
-            _buildCard(),
-          ],
-          [
-            _buildCard(),
-            _buildCard(),
-            _buildCard(),
+            _buildSceneCard(MyIcons.cold, "Cold", "cold"),
+            _buildSceneCard(MyIcons.cross, "Pink", "pink"),
+            _buildSceneCard(MyIcons.contrast, "Neon v2", "neon2"),
           ],
         ])
       ])

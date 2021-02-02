@@ -62,4 +62,21 @@ class LightRepo {
     }
     return this;
   }
+
+  Future<LightRepo> setScene(String name) async {
+    var url = "${Config.API_PATH}v2/scene/$name";
+    Map<String, String> headers = {
+      'Content-type': 'application/json',
+      'Accept': 'application/json',
+    };
+
+    final response = await http.post(url, headers: headers);
+    if (response.statusCode == 200) {
+      Map<String, dynamic> data = json.decode(response.body);
+      Map.from(data).forEach(
+              (key, value) => getLightById(key).data = LightData.fromJson(value));
+      isAnyPowered();
+    }
+    return this;
+  }
 }
