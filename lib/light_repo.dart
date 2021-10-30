@@ -31,12 +31,7 @@ class LightRepo {
   Future<LightRepo> updateLightData() async {
     var url = "${Config.API_PATH}v2/lights";
 
-    Map<String, String> headers = {
-      'Content-type': 'application/json',
-      'Accept': 'application/json',
-    };
-
-    final response = await http.get(url, headers: headers);
+    final response = await http.get(url, headers: Config.HEADERS);
     if (response.statusCode == 200) {
       Map<String, dynamic> data = json.decode(response.body);
       Map.from(data).forEach(
@@ -48,12 +43,8 @@ class LightRepo {
 
   Future<LightRepo> turnOffAllLights() async {
     var url = "${Config.API_PATH}v2/lights";
-    Map<String, String> headers = {
-      'Content-type': 'application/json',
-      'Accept': 'application/json',
-    };
 
-    final response = await http.delete(url, headers: headers);
+    final response = await http.delete(url, headers: Config.HEADERS);
     if (response.statusCode == 200) {
       Map<String, dynamic> data = json.decode(response.body);
       Map.from(data).forEach(
@@ -65,12 +56,8 @@ class LightRepo {
 
   Future<LightRepo> setScene(String name) async {
     var url = "${Config.API_PATH}v2/scene/$name";
-    Map<String, String> headers = {
-      'Content-type': 'application/json',
-      'Accept': 'application/json',
-    };
 
-    final response = await http.post(url, headers: headers);
+    final response = await http.post(url, headers: Config.HEADERS);
     if (response.statusCode == 200) {
       Map<String, dynamic> data = json.decode(response.body);
       Map.from(data).forEach(

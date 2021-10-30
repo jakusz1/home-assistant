@@ -83,6 +83,7 @@ class _MyHomePageState extends State<MyHomePage> {
   LightRepo lightRepo = LightRepo();
   DenonDevice amp = DenonDevice();
   SamsungDevice tv = SamsungDevice();
+  ProjectorDevice projector = ProjectorDevice();
   bool ampPowerBtnEnabled = true;
   RefreshController _lightsRefreshController =
       RefreshController(initialRefresh: false);
@@ -112,12 +113,8 @@ class _MyHomePageState extends State<MyHomePage> {
       state = light.data.powerMode ? "off" : "on";
     }
     var url = "${Config.API_PATH}v2/lights/${light.id}/$state";
-    Map<String, String> headers = {
-      'Content-type': 'application/json',
-      'Accept': 'application/json',
-    };
 
-    final response = await http.post(url, headers: headers);
+    final response = await http.post(url, headers: Config.HEADERS);
     setState(() {
       light.data = LightData.fromJson(json.decode(response.body));
       lightRepo.isAnyPowered();
@@ -126,12 +123,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> updateSpotify() async {
     var url = "${Config.API_PATH}v2/spotify";
-    Map<String, String> headers = {
-      'Content-type': 'application/json',
-      'Accept': 'application/json',
-    };
 
-    final response = await http.get(url, headers: headers);
+    final response = await http.get(url, headers: Config.HEADERS);
     setState(() {
       var rgb = json.decode(response.body)['best_rgb'];
       red.value = rgb[0].toDouble();
@@ -212,7 +205,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Widget getPowerButton(Device device) {
     return FlatButton(
-      onPressed: device.name == "TV" || ampPowerBtnEnabled
+      onPressed: device.name != "Amplifier" || ampPowerBtnEnabled
           ? () {
               if (device.name == "Amplifier" && !device.power) {
                 setState(() {
@@ -355,7 +348,11 @@ class _MyHomePageState extends State<MyHomePage> {
             children: <Widget>[
               Expanded(
                 child: FlatButton(
-                  onPressed: colorMode.colorMode == 1 ? () {updateSpotify();} : null,
+                  onPressed: colorMode.colorMode == 1
+                      ? () {
+                          updateSpotify();
+                        }
+                      : null,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: <Widget>[
@@ -418,7 +415,8 @@ class _MyHomePageState extends State<MyHomePage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: <Widget>[
-              FlatButton(
+              Flexible(
+                  child: FlatButton(
                 onPressed: amp.power
                     ? () {
                         amp.sendAction(DenonEnum.VOL_DOWN).then((result) {
@@ -429,8 +427,9 @@ class _MyHomePageState extends State<MyHomePage> {
                       }
                     : null,
                 child: Icon(Icons.volume_down),
-              ),
-              FlatButton(
+              )),
+              Flexible(
+                  child: FlatButton(
                 onPressed: amp.power
                     ? () {
                         amp.sendAction(DenonEnum.VOL_UP).then((result) {
@@ -441,7 +440,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       }
                     : null,
                 child: Icon(Icons.volume_up),
-              ),
+              )),
             ],
           )
         ],
@@ -455,6 +454,7 @@ class _MyHomePageState extends State<MyHomePage> {
       child: Column(
         children: <Widget>[
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: <Widget>[
               Flexible(
                   child: FlatButton(
@@ -523,6 +523,7 @@ class _MyHomePageState extends State<MyHomePage> {
       child: Column(
         children: <Widget>[
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: <Widget>[
               Flexible(
                   child: FlatButton(
@@ -804,10 +805,10 @@ class _MyHomePageState extends State<MyHomePage> {
     ]);
   }
 
-  Widget getGroup(Widget title, Widget content) {
+  Widget getGroup(List<Widget> widgets) {
     return Padding(
       padding: const EdgeInsets.all(8.0),
-      child: Column(children: <Widget>[title, content]),
+      child: Column(children: widgets),
     );
   }
 
@@ -818,25 +819,27 @@ class _MyHomePageState extends State<MyHomePage> {
           Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                getGroup(
-                    getColorGroupTitle(colorMode),
-                    getGroupContent([
-                      [getTempCard(), getBrightnessCard()],
-                      [getRGBCard(), getSpotifyCard()]
-                    ])),
-                getGroup(
-                    getLightsTitle(),
-                    getGroupContent([
-                      [
-                        getLampCard(lightRepo.repo[0]),
-                        getLampCard(lightRepo.repo[1])
-                      ],
-                      [
-                        getLampCard(lightRepo.repo[2]),
-                        getLampCard(lightRepo.repo[3]),
-                        getLampCard(lightRepo.repo[4])
-                      ]
-                    ])),
+                getGroup([
+                  getColorGroupTitle(colorMode),
+                  getGroupContent([
+                    [getTempCard(), getBrightnessCard()],
+                    [getRGBCard(), getSpotifyCard()]
+                  ])
+                ]),
+                getGroup([
+                  getLightsTitle(),
+                  getGroupContent([
+                    [
+                      getLampCard(lightRepo.repo[0]),
+                      getLampCard(lightRepo.repo[1])
+                    ],
+                    [
+                      getLampCard(lightRepo.repo[2]),
+                      getLampCard(lightRepo.repo[3]),
+                      getLampCard(lightRepo.repo[4])
+                    ]
+                  ])
+                ]),
               ])
         ]),
         onRefresh: () async {
@@ -863,17 +866,20 @@ class _MyHomePageState extends State<MyHomePage> {
           Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                getGroup(
-                    getDeviceTitle(tv),
-                    getGroupContent([
-                      [getTVAppsCard()]
-                    ])),
-                getGroup(
-                    getDeviceTitle(amp),
-                    getGroupContent([
-                      [getDenonInputsCard()],
-                      [getVolumeCard()]
-                    ])),
+                getGroup([
+                  getDeviceTitle(tv),
+                  getGroupContent([
+                    [getTVAppsCard()]
+                  ])
+                ]),
+                getGroup([
+                  getDeviceTitle(amp),
+                  getGroupContent([
+                    [getDenonInputsCard()],
+                    [getVolumeCard()]
+                  ])
+                ]),
+                getGroup([getDeviceTitle(projector)])
               ])
         ]),
         onRefresh: () async {
@@ -898,6 +904,16 @@ class _MyHomePageState extends State<MyHomePage> {
                 MyIcons.candle,
                 "Candle",
                 "candle"),
+            _buildSceneCard(
+                LinearGradient(
+                  colors: [
+                    kelvinToColor(2700),
+                    Colors.transparent,
+                  ],
+                ),
+                MyIcons.lightbulb_on,
+                "Warm",
+                "warm"),
             _buildSceneCard(
                 LinearGradient(
                   colors: [
@@ -975,14 +991,11 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   updateDevicesTab() {
-    tv.update().then((result) {
-      setState(() {
-        tv = result;
-      });
-    });
-    amp.update().then((result) {
-      setState(() {
-        amp = result;
+    [tv, amp, projector].forEach((element) {
+      element.update().then((result) {
+        setState(() {
+          element = result;
+        });
       });
     });
   }
@@ -1022,22 +1035,39 @@ class _MyHomePageState extends State<MyHomePage> {
               overlayColor: Colors.transparent,
             ),
             fontFamily: "raleway"),
-        home: DefaultTabController(
-            length: 3,
-            initialIndex: 1,
-            child: Scaffold(
-              appBar: AppBar(
-                toolbarHeight: 0.0,
-              ),
-              bottomNavigationBar: ColoredTabBar(Colors.black45, menu()),
-              body: TabBarView(
-                children: [
-                  getScenesListView(),
-                  getLightsListView(),
-                  getDevicesListView()
-                ],
-              ),
-            )));
+        home: useTabsLayout(context)
+            ? DefaultTabController(
+                length: 3,
+                initialIndex: 1,
+                child: Scaffold(
+                  appBar: AppBar(
+                    toolbarHeight: 0.0,
+                  ),
+                  bottomNavigationBar: ColoredTabBar(Colors.black45, menu()),
+                  body: TabBarView(
+                    children: [
+                      getScenesListView(),
+                      getLightsListView(),
+                      getDevicesListView()
+                    ],
+                  ),
+                ))
+            : Scaffold(
+                appBar: AppBar(
+                  toolbarHeight: 0.0,
+                ),
+                body: Row(
+                  children: [
+                    Expanded(flex: 2, child: getScenesListView()),
+                    Expanded(flex: 3, child: getLightsListView()),
+                    Expanded(flex: 2, child: getDevicesListView())
+                  ],
+                ),
+              ));
+  }
+
+  bool useTabsLayout(BuildContext context) {
+    return !(MediaQuery.of(context).orientation == Orientation.landscape && MediaQuery.of(context).size.width > 880);
   }
 
   Widget menu() {

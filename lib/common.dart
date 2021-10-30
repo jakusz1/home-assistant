@@ -85,6 +85,10 @@ class ColorModeData {
 
 class Config {
   static const String API_PATH = "http://192.168.0.101:80/api/";
+  static const Map<String, String> HEADERS = {
+    'Content-type': 'application/json',
+    'Accept': 'application/json',
+  };
 }
 
 class Light {
@@ -115,10 +119,6 @@ class Light {
       state = colorMode.colorMode == 1 ? "rgb" : "ct";
     }
     var url = "${Config.API_PATH}v2/lights/$id/$state";
-    Map<String, String> headers = {
-      'Content-type': 'application/json',
-      'Accept': 'application/json',
-    };
     Map<String, int> body = {
       'ct': temp.toInt(),
       'r': red.value.toInt(),
@@ -127,7 +127,7 @@ class Light {
       'br': brightness.toInt(),
     };
 
-    final result = await http.post(url, headers: headers, body: json.encode(body));
+    final result = await http.post(url, headers: Config.HEADERS, body: json.encode(body));
     data = LightData.fromJson(json.decode(result.body));
     return this;
   }

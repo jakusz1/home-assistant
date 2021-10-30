@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer';
 import 'dart:io';
 
 import 'common.dart';
@@ -12,6 +13,45 @@ abstract class Device {
 
 
   Future<Device> switchPower();
+  Future<Device> update();
+}
+
+class ProjectorDevice implements Device {
+  @override
+  String source = "";
+  @override
+  bool power = false;
+  @override
+  String name = "Projector";
+
+  ProjectorDevice();
+
+  ProjectorDevice.fromJson(Map<String, dynamic> json) {
+    power = json['power'];
+  }
+
+  Future<ProjectorDevice> update() async {
+    var url = "${Config.API_PATH}v2/projector";
+
+    final response = await http.get(url, headers: Config.HEADERS);
+    if (response.statusCode == 200) {
+      ProjectorDevice updatedDev = ProjectorDevice.fromJson(json.decode(response.body));
+      this.power = updatedDev.power;
+    }
+    return this;
+  }
+
+  @override
+  Future<ProjectorDevice> switchPower() async {
+    var url = "${Config.API_PATH}v2/projector";
+
+    final response = await http.post(url, headers: Config.HEADERS);
+    if (response.statusCode == 200) {
+      ProjectorDevice updatedDev = ProjectorDevice.fromJson(json.decode(response.body));
+      this.power = updatedDev.power;
+    }
+    return this;
+  }
 }
 
 class DenonDevice implements Device {
@@ -32,12 +72,7 @@ class DenonDevice implements Device {
   Future<DenonDevice> update() async {
     var url = "${Config.API_PATH}v2/denon";
 
-    Map<String, String> headers = {
-      'Content-type': 'application/json',
-      'Accept': 'application/json',
-    };
-
-    final response = await http.get(url, headers: headers);
+    final response = await http.get(url, headers: Config.HEADERS);
     if (response.statusCode == 200) {
       DenonDevice updatedDev = DenonDevice.fromJson(json.decode(response.body));
       this.source = updatedDev.source;
@@ -50,12 +85,7 @@ class DenonDevice implements Device {
   Future<DenonDevice> switchPower() async {
     var url = "${Config.API_PATH}v2/denon/amp_power";
 
-    Map<String, String> headers = {
-      'Content-type': 'application/json',
-      'Accept': 'application/json',
-    };
-
-    final response = await http.post(url, headers: headers, body: json.encode({'count': 6}));
+    final response = await http.post(url, headers: Config.HEADERS, body: json.encode({'count': 6}));
     if (response.statusCode == 200) {
       DenonDevice updatedDev = DenonDevice.fromJson(json.decode(response.body));
       this.source = updatedDev.source;
@@ -71,12 +101,7 @@ class DenonDevice implements Device {
   Future<DenonDevice> sendAction(String action) async {
     var url = "${Config.API_PATH}v2/denon/$action";
 
-    Map<String, String> headers = {
-      'Content-type': 'application/json',
-      'Accept': 'application/json',
-    };
-
-    final response = await http.post(url, headers: headers, body: json.encode({'count': action.contains("volume") ? 3 : 6}));
+    final response = await http.post(url, headers: Config.HEADERS, body: json.encode({'count': action.contains("volume") ? 3 : 6}));
     if (response.statusCode == 200) {
       DenonDevice updatedDev = DenonDevice.fromJson(json.decode(response.body));
       this.source = updatedDev.source;
@@ -104,12 +129,7 @@ class SamsungDevice implements Device {
   Future<SamsungDevice> update() async {
     var url = "${Config.API_PATH}v2/tv";
 
-    Map<String, String> headers = {
-      'Content-type': 'application/json',
-      'Accept': 'application/json',
-    };
-
-    final response = await http.get(url, headers: headers);
+    final response = await http.get(url, headers: Config.HEADERS);
     if (response.statusCode == 200) {
       SamsungDevice updatedDev = SamsungDevice.fromJson(json.decode(response.body));
       this.power = updatedDev.power;
@@ -122,12 +142,7 @@ class SamsungDevice implements Device {
   Future<SamsungDevice> switchPower() async {
     var url = "${Config.API_PATH}v2/tv/power/${power ? 'off' : 'on'}";
 
-    Map<String, String> headers = {
-      'Content-type': 'application/json',
-      'Accept': 'application/json',
-    };
-
-    final response = await http.post(url, headers: headers);
+    final response = await http.post(url, headers: Config.HEADERS);
     if (response.statusCode == 200) {
       SamsungDevice updatedDev = SamsungDevice.fromJson(json.decode(response.body));
       this.source = updatedDev.source;
@@ -139,12 +154,7 @@ class SamsungDevice implements Device {
   Future<SamsungDevice> setSource(String source) async {
     var url = "${Config.API_PATH}v2/tv/apps/$source/on";
 
-    Map<String, String> headers = {
-      'Content-type': 'application/json',
-      'Accept': 'application/json',
-    };
-
-    final response = await http.post(url, headers: headers);
+    final response = await http.post(url, headers: Config.HEADERS);
     if (response.statusCode == 200) {
       SamsungDevice updatedDev = SamsungDevice.fromJson(json.decode(response.body));
       this.source = updatedDev.source;
