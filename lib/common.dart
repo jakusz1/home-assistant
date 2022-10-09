@@ -38,7 +38,7 @@ class MyIcons {
   static const IconData laptop = IconData(0xF0322, fontFamily: 'maticons');
   static const IconData desk_lamp = IconData(0xF095F, fontFamily: 'maticons');
   static const IconData floor_lamp = IconData(0xF08DD, fontFamily: 'maticons');
-  static const IconData bed_lamp = IconData(0xF06B5, fontFamily: 'maticons');
+  static const IconData bed_lamp = IconData(0xF02E3, fontFamily: 'maticons');
   static const IconData down = IconData(0xF091D, fontFamily: 'maticons');
   static const IconData up = IconData(0xF041C, fontFamily: 'maticons');
   static const IconData shelf_lamp = IconData(0xF05A7, fontFamily: 'maticons');
@@ -84,7 +84,8 @@ class ColorModeData {
 }
 
 class Config {
-  static const String API_PATH = "http://192.168.0.101:80/api/";
+  static const String PATH = "http://192.168.0.101:80/";
+  static const String API_PATH = "${PATH}api/";
   static const Map<String, String> HEADERS = {
     'Content-type': 'application/json',
     'Accept': 'application/json',

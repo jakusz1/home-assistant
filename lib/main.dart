@@ -89,6 +89,7 @@ class _MyHomePageState extends State<MyHomePage> {
       RefreshController(initialRefresh: false);
   RefreshController _devicesRefreshController =
       RefreshController(initialRefresh: false);
+  NetworkImage albumImage = NetworkImage("${Config.API_PATH}v2/spotify/album");
 
   void updateRGB() {
     rgbColor = Color.fromRGBO(
@@ -127,11 +128,15 @@ class _MyHomePageState extends State<MyHomePage> {
     final response = await http.get(url, headers: Config.HEADERS);
     setState(() {
       var rgb = json.decode(response.body)['best_rgb'];
-      red.value = rgb[0].toDouble();
-      green.value = rgb[1].toDouble();
-      blue.value = rgb[2].toDouble();
-      updateRGB();
-      updateForegroundColor();
+      if (rgb != null) {
+        red.value = rgb[0].toDouble();
+        green.value = rgb[1].toDouble();
+        blue.value = rgb[2].toDouble();
+        updateRGB();
+        updateForegroundColor();
+        albumImage = NetworkImage(
+            "${Config.API_PATH}v2/spotify/album?t=${DateTime.now().millisecondsSinceEpoch}");
+      }
     });
   }
 
@@ -339,32 +344,34 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  Card getSpotifyCard() {
-    return Card(
-      elevation: 0,
-      child: Column(
-        children: <Widget>[
-          Row(
-            children: <Widget>[
-              Expanded(
-                child: FlatButton(
-                  onPressed: colorMode.colorMode == 1
-                      ? () {
-                          updateSpotify();
-                        }
-                      : null,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: <Widget>[
-                      Icon(MyIcons.spotify),
-                      Text("get album color")
-                    ],
-                  ),
-                ),
-              )
-            ],
-          )
-        ],
+  Container getSpotifyCard() {
+    return Container(
+      constraints: BoxConstraints(minWidth: 1000, maxWidth: 1000),
+      margin: const EdgeInsets.all(4.0),
+      padding: const EdgeInsets.only(top: 64),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.all(Radius.circular(4)),
+        color: Colors.white10,
+        image: DecorationImage(
+          image: albumImage,
+          fit: BoxFit.fitWidth,
+          alignment: Alignment.center,
+        ),
+      ),
+      child: FlatButton(
+        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        onPressed: colorMode.colorMode == 1
+            ? () {
+                updateSpotify();
+              }
+            : null,
+        color: Colors.black45,
+        child: Padding(
+            padding: const EdgeInsets.all(4.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [Icon(MyIcons.spotify), Text("refresh album")],
+            )),
       ),
     );
   }
@@ -831,7 +838,8 @@ class _MyHomePageState extends State<MyHomePage> {
                   getGroupContent([
                     [
                       getLampCard(lightRepo.repo[0]),
-                      getLampCard(lightRepo.repo[1])
+                      getLampCard(lightRepo.repo[1]),
+                      getLampCard(lightRepo.repo[5])
                     ],
                     [
                       getLampCard(lightRepo.repo[2]),
@@ -1017,6 +1025,7 @@ class _MyHomePageState extends State<MyHomePage> {
     lightRepo.addLight(Light("couch", "Couch", MyIcons.floor_lamp, null));
     lightRepo.addLight(Light("kitchen", "Kitchen", MyIcons.strip_led, null));
     lightRepo.addLight(Light("bed", "Bed", MyIcons.bed_lamp, null));
+    lightRepo.addLight(Light("desk2", "Desk 2", MyIcons.desk_lamp, null));
     updateAll();
   }
 
@@ -1067,7 +1076,8 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   bool useTabsLayout(BuildContext context) {
-    return !(MediaQuery.of(context).orientation == Orientation.landscape && MediaQuery.of(context).size.width > 880);
+    return !(MediaQuery.of(context).orientation == Orientation.landscape &&
+        MediaQuery.of(context).size.width > 880);
   }
 
   Widget menu() {
